@@ -827,6 +827,18 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Configure mirrors before the first apt install (Xvfb).
+      - name: Configure Ubuntu mirror for Android runner
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          for source_file in /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source_file" ]; then
+              sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' "$source_file"
+            fi
+          done
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+
 #      - name: Cache Qt Linux Desktop
 #        id: cache-qt-linux-desktop
 #        uses: actions/cache@v1
@@ -858,7 +870,8 @@ jobs:
           git submodule update --init --recursive 
 
       - name: Install packages required to run QZ inside workflow
-        run: sudo apt update -y && sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qtquickcontrols2-5-dev libqt5bluetooth5 libqt5widgets5 libqt5positioning5 libqt5xml5 qtconnectivity5-dev qtpositioning5-dev libqt5charts5-dev libqt5charts5 libqt5networkauth5-dev libqt5websockets5* libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev libxcb-shape0-dev libxcb-xkb-dev
+        timeout-minutes: 10
+        run: sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qtquickcontrols2-5-dev libqt5bluetooth5 libqt5widgets5 libqt5positioning5 libqt5xml5 qtconnectivity5-dev qtpositioning5-dev libqt5charts5-dev libqt5charts5 libqt5networkauth5-dev libqt5websockets5* libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev libxcb-shape0-dev libxcb-xkb-dev
 
 #      - name: Test Peloton API
 #        if: github.event_name == 'push' || github.event_name == 'schedule'
